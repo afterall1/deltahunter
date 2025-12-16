@@ -23,7 +23,7 @@ function ReflectorFloor() {
             <planeGeometry args={[160, 160]} />
             <MeshReflectorMaterial
                 blur={[300, 100]}
-                resolution={1024}
+                resolution={512}
                 mixBlur={1}
                 mixStrength={35}
                 roughness={1}
@@ -144,6 +144,7 @@ export function Scene() {
                 near: 0.1,
                 far: 1000,
             }}
+            dpr={[1, 2]}
             gl={{ antialias: true, alpha: false }}
             style={{ background: '#000000' }}
         >

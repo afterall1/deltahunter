@@ -60,7 +60,8 @@ export function Aura({ score, barHeight }: AuraProps) {
             ref={meshRef}
             position={[0, pillarY, 0]}
         >
-            <cylinderGeometry args={[PILLAR_RADIUS, PILLAR_RADIUS, PILLAR_HEIGHT, 32, 1, true]} />
+            {/* 8 segments = Cyber/Digital look + GPU optimization */}
+            <cylinderGeometry args={[0.9, 0.9, PILLAR_HEIGHT, 8, 1, true]} />
             <MeshDistortMaterial
                 color={color}
                 transparent={true}
