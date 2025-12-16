@@ -44,22 +44,23 @@ function getColorGrading(percentChange: number, isPositive: boolean) {
 
     if (absChange < 1) {
         // Sönük: %0-1
-        intensity = 0.3 + (absChange * 0.3);
+        intensity = 0.3 + (absChange * 0.2);
         colorMix = baseColor;
     } else if (absChange < 5) {
         // Normal: %1-5
-        intensity = 0.6 + ((absChange - 1) / 4) * 1.2;
+        intensity = 0.5 + ((absChange - 1) / 4) * 0.8;
         colorMix = baseColor;
     } else {
-        // Çok parlak: %5+
+        // Parlak: %5+ (Maksimum 2.0 ile sınırlı)
         // Beyaza çalan renk (daha açık ton)
-        const whiteMix = Math.min((absChange - 5) / 10, 0.5);
+        const whiteMix = Math.min((absChange - 5) / 10, 0.3);
         colorMix = {
             r: baseColor.r + (1 - baseColor.r) * whiteMix,
             g: baseColor.g + (1 - baseColor.g) * whiteMix,
             b: baseColor.b + (1 - baseColor.b) * whiteMix,
         };
-        intensity = 1.8 + Math.min((absChange - 5) / 5, 1.5);
+        // Maksimum parlaklık 2.0 ile sınırlı
+        intensity = Math.min(1.3 + (absChange - 5) * 0.1, 2.0);
     }
 
     // RGB to hex

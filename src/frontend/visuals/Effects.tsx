@@ -1,7 +1,7 @@
 /**
  * Delta Hunter - Post-processing Effects
  * Bloom efekti ile neon glow.
- * KURAL: Performans için optimize edilmiş ayarlar.
+ * KURAL: Performans ve göz konforu için optimize edilmiş ayarlar.
  */
 
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -11,9 +11,9 @@ export function Effects() {
     return (
         <EffectComposer>
             <Bloom
-                luminanceThreshold={0.4}
-                luminanceSmoothing={0.9}
-                intensity={1.5}
+                luminanceThreshold={0.6}
+                luminanceSmoothing={0.3}
+                intensity={1.0}
                 mipmapBlur={true}
                 kernelSize={KernelSize.SMALL}
                 resolutionScale={0.5}
