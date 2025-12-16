@@ -7,6 +7,7 @@
 
 import { CoinData, CoinAnalysis, AnalysisResult } from '../../shared/types.js';
 import { MAX_HISTORY_MINUTES, CLEANUP_INTERVAL_MINUTES, MAX_TRACKED_COINS } from '../../shared/constants.js';
+import { evaluatePosition } from './strategy.js';
 
 // Her sembol için fiyat geçmişi
 // Map<symbol, CoinData[]>
@@ -242,14 +243,30 @@ export function analyze(lookbackMinutes: number): AnalysisResult {
         // CVD Divergence hesapla
         const divergence = calculateDivergence(history);
 
-        results.push({
+        // AI Strateji Değerlendirmesi (Trinity Protocol)
+        const aiSignal = evaluatePosition(
+            symbol,
+            currentData.price,
+            divergence.score,
+            history
+        );
+
+        // Sadece yüksek güvenilirlik varsa dahil et
+        const coinAnalysis: CoinAnalysis = {
             symbol,
             percentChange,
             currentPrice: currentData.price,
             oldPrice: oldData.price,
             cvdDivergenceScore: divergence.score,
             deltaTrend: divergence.trend,
-        });
+        };
+
+        // AI sinyal varsa ekle
+        if (aiSignal.direction !== 'NONE' && aiSignal.confidenceScore >= 80) {
+            coinAnalysis.aiSignal = aiSignal;
+        }
+
+        results.push(coinAnalysis);
     }
 
     // Sıralama: Mutlak değişime göre (en çok hareket eden önce)

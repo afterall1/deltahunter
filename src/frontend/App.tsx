@@ -4,16 +4,18 @@
  */
 
 import { Scene } from './visuals/Scene';
+import { SignalCard } from './visuals/SignalCard';
 import { useHeartbeat } from './logic/useHeartbeat';
 import { useCryptoStore, FilterType } from './logic/store';
 import { LOOKBACK_OPTIONS } from '../shared/constants';
+import { useMemo } from 'react';
 
 export function App() {
     // Heartbeat hook'unu başlat
     useHeartbeat();
 
     // Store state
-    const { isLoading, error, lastUpdate, coins, config, filter, updateConfig, setFilter } = useCryptoStore();
+    const { isLoading, error, lastUpdate, coins, config, filter, updateConfig, setFilter, selectedSignal, closeSignalCard } = useCryptoStore();
 
     // Lookback değiştiğinde
     const handleLookbackChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -26,6 +28,37 @@ export function App() {
         : filter === 'GAINERS'
             ? coins.filter(c => c.percentChange > 0).length
             : coins.filter(c => c.percentChange < 0).length;
+
+    // AI sinyalleri
+    const aiSignals = useMemo(() => {
+        return coins.filter(c => c.aiSignal && c.aiSignal.direction !== 'NONE');
+    }, [coins]);
+
+    // Son 8 coin log
+    const recentLogs = useMemo(() => {
+        return coins.slice(0, 8).map(coin => {
+            const hasSignal = coin.aiSignal && coin.aiSignal.direction !== 'NONE';
+            const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const symbol = coin.symbol.replace('USDT', '');
+
+            if (hasSignal) {
+                return {
+                    time,
+                    symbol,
+                    status: `${coin.aiSignal!.direction} DETECTED!`,
+                    color: coin.aiSignal!.direction === 'LONG' ? '#00ff00' : '#ff4444',
+                    isSignal: true,
+                };
+            }
+            return {
+                time,
+                symbol,
+                status: coin.cvdDivergenceScore > 50 ? 'CVD+' : coin.cvdDivergenceScore < -50 ? 'CVD-' : 'NEUTRAL',
+                color: '#666',
+                isSignal: false,
+            };
+        });
+    }, [coins]);
 
     return (
         <div style={styles.container}>
@@ -159,6 +192,65 @@ export function App() {
                     <span style={styles.footerText}>CLICK BAR TO TRADE ON BINANCE</span>
                 </div>
             </div>
+
+            {/* AI System Log Panel - Right Side */}
+            <div style={styles.aiPanel}>
+                {/* Scanline effect */}
+                <div style={styles.scanline} />
+
+                {/* Header */}
+                <div style={styles.aiHeader}>
+                    <span style={styles.aiHeaderIcon}>🧠</span>
+                    <span style={styles.aiHeaderText}>SYSTEM LOG</span>
+                    <span style={styles.aiHeaderStatus}>
+                        {aiSignals.length > 0 ? `${aiSignals.length} SIGNALS` : 'SCANNING'}
+                    </span>
+                </div>
+
+                {/* Divider */}
+                <div style={styles.divider} />
+
+                {/* Log Feed */}
+                <div style={styles.logFeed}>
+                    {recentLogs.map((log, i) => (
+                        <div key={i} style={{
+                            ...styles.logItem,
+                            backgroundColor: log.isSignal ? 'rgba(0, 255, 0, 0.05)' : 'transparent',
+                        }}>
+                            <span style={styles.logTime}>[{log.time}]</span>
+                            <span style={styles.logSymbol}>{log.symbol}:</span>
+                            <span style={{ ...styles.logStatus, color: log.color }}>
+                                {log.status}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* AI Stats */}
+                <div style={styles.divider} />
+                <div style={styles.aiStats}>
+                    <div style={styles.aiStatItem}>
+                        <span style={styles.aiStatLabel}>📈 ACTIVE SIGNALS</span>
+                        <span style={styles.aiStatValue}>{aiSignals.length}</span>
+                    </div>
+                    <div style={styles.aiStatItem}>
+                        <span style={styles.aiStatLabel}>⚡ CONFIDENCE AVG</span>
+                        <span style={styles.aiStatValue}>
+                            {aiSignals.length > 0
+                                ? Math.round(aiSignals.reduce((sum, c) => sum + (c.aiSignal?.confidenceScore || 0), 0) / aiSignals.length)
+                                : '-'}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Signal Card Modal */}
+            {selectedSignal && (
+                <SignalCard
+                    setup={selectedSignal}
+                    onClose={closeSignalCard}
+                />
+            )}
         </div>
     );
 }
@@ -378,6 +470,90 @@ const styles: { [key: string]: React.CSSProperties } = {
     loadingSubtext: {
         color: '#666',
         fontSize: '12px',
+    },
+    // AI Panel Styles
+    aiPanel: {
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        width: '260px',
+        fontFamily: "'Courier New', monospace",
+        fontSize: '11px',
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        borderRadius: '4px',
+        border: '1px solid #FFD700',
+        boxShadow: '0 0 20px rgba(255, 215, 0, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.8)',
+        backdropFilter: 'blur(10px)',
+        overflow: 'hidden',
+    },
+    aiHeader: {
+        padding: '12px 15px',
+        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    aiHeaderIcon: {
+        fontSize: '16px',
+    },
+    aiHeaderText: {
+        color: '#FFD700',
+        fontWeight: 'bold',
+        fontSize: '12px',
+        letterSpacing: '1px',
+        textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
+    },
+    aiHeaderStatus: {
+        marginLeft: 'auto',
+        color: '#00ff00',
+        fontSize: '9px',
+        animation: 'pulse 1s ease-in-out infinite',
+    },
+    logFeed: {
+        maxHeight: '200px',
+        overflowY: 'auto',
+    },
+    logItem: {
+        padding: '6px 15px',
+        borderBottom: '1px solid rgba(255, 215, 0, 0.05)',
+        display: 'flex',
+        gap: '6px',
+        fontSize: '10px',
+    },
+    logTime: {
+        color: '#444',
+        flexShrink: 0,
+    },
+    logSymbol: {
+        color: '#888',
+        width: '50px',
+        flexShrink: 0,
+    },
+    logStatus: {
+        fontWeight: 'bold',
+    },
+    aiStats: {
+        padding: '10px 15px',
+        display: 'flex',
+        gap: '15px',
+    },
+    aiStatItem: {
+        flex: 1,
+    },
+    aiStatLabel: {
+        display: 'block',
+        color: '#666',
+        fontSize: '8px',
+        letterSpacing: '0.5px',
+        marginBottom: '4px',
+    },
+    aiStatValue: {
+        display: 'block',
+        color: '#FFD700',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
     },
 };
 

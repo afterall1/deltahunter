@@ -5,7 +5,7 @@
  */
 
 import { create } from 'zustand';
-import { CoinAnalysis } from '../../shared/types.js';
+import { CoinAnalysis, TradeSetup } from '../../shared/types.js';
 import { DEFAULT_REFRESH_RATE_MS, LOOKBACK_OPTIONS } from '../../shared/constants.js';
 
 // Filter tipi
@@ -28,6 +28,9 @@ interface CryptoState {
     // Hata mesajı
     error: string | null;
 
+    // Seçili AI Sinyal Kartı
+    selectedSignal: TradeSetup | null;
+
     // Konfigürasyon
     config: {
         lookbackPeriod: number;      // Dakika
@@ -40,6 +43,8 @@ interface CryptoState {
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
     updateConfig: (newConfig: Partial<CryptoState['config']>) => void;
+    openSignalCard: (setup: TradeSetup) => void;
+    closeSignalCard: () => void;
 }
 
 // Zustand store
@@ -50,6 +55,7 @@ export const useCryptoStore = create<CryptoState>((set) => ({
     isLoading: false,
     lastUpdate: null,
     error: null,
+    selectedSignal: null,
 
     // Config - constants.ts'ten varsayılanlar
     config: {
@@ -73,6 +79,10 @@ export const useCryptoStore = create<CryptoState>((set) => ({
     updateConfig: (newConfig) => set((state) => ({
         config: { ...state.config, ...newConfig },
     })),
+
+    // Signal Card Actions
+    openSignalCard: (setup) => set({ selectedSignal: setup }),
+    closeSignalCard: () => set({ selectedSignal: null }),
 }));
 
 export default useCryptoStore;

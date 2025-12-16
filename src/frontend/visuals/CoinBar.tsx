@@ -9,11 +9,15 @@ import { useState, useMemo } from 'react';
 import { Text, Billboard } from '@react-three/drei';
 import { SentimentTooltip } from './SentimentTooltip';
 import { Aura } from './Aura';
+import { AiMarker } from './AiMarker';
+import { useCryptoStore } from '../logic/store';
+import { TradeSetup } from '../../shared/types.js';
 
 interface CoinBarProps {
     symbol: string;
     percentChange: number;
     cvdDivergenceScore?: number; // -100 to +100
+    aiSignal?: TradeSetup; // AI Trade Signal
     position: [number, number, number];
 }
 
@@ -65,8 +69,12 @@ function getColorGrading(percentChange: number, isPositive: boolean) {
     return { color: hexColor, intensity };
 }
 
-export function CoinBar({ symbol, percentChange, cvdDivergenceScore, position }: CoinBarProps) {
+export function CoinBar({ symbol, percentChange, cvdDivergenceScore, aiSignal, position }: CoinBarProps) {
     const [hovered, setHovered] = useState(false);
+    const openSignalCard = useCryptoStore((state) => state.openSignalCard);
+
+    // AI sinyal var mı?
+    const hasAISignal = aiSignal && aiSignal.direction !== 'NONE';
 
     // Yükseklik hesapla
     const height = MIN_HEIGHT + Math.abs(percentChange) * HEIGHT_MULTIPLIER;
@@ -90,9 +98,13 @@ export function CoinBar({ symbol, percentChange, cvdDivergenceScore, position }:
     // Binance trade URL
     const tradeUrl = `https://www.binance.com/en/trade/${symbol.replace('USDT', '')}_USDT`;
 
-    // Click handler - Binance'a git
+    // Click handler - AI sinyali varsa kartı aç, yoksa Binance'a git
     const handleClick = () => {
-        window.open(tradeUrl, '_blank');
+        if (hasAISignal && aiSignal) {
+            openSignalCard(aiSignal);
+        } else {
+            window.open(tradeUrl, '_blank');
+        }
     };
 
     // Hover handlers - Cursor değiştir
@@ -126,15 +138,15 @@ export function CoinBar({ symbol, percentChange, cvdDivergenceScore, position }:
                 />
             </mesh>
 
-            {/* Billboard - Her zaman kameraya bakar */}
-            <Billboard position={[0, height + 0.6, 0]}>
+            {/* Billboard - Her zaman kameraya bakar - Enerji sütununun üstünde */}
+            <Billboard position={[0, 7, 0]}>
                 {/* Coin Sembolü */}
                 <Text
-                    fontSize={0.35}
+                    fontSize={0.6}
                     color="white"
                     anchorX="center"
                     anchorY="bottom"
-                    outlineWidth={0.015}
+                    outlineWidth={0.02}
                     outlineColor="black"
                 >
                     {displaySymbol}
@@ -142,13 +154,13 @@ export function CoinBar({ symbol, percentChange, cvdDivergenceScore, position }:
             </Billboard>
 
             {/* Yüzde Değişimi */}
-            <Billboard position={[0, height + 0.25, 0]}>
+            <Billboard position={[0, 6.4, 0]}>
                 <Text
-                    fontSize={0.22}
+                    fontSize={0.4}
                     color={color}
                     anchorX="center"
                     anchorY="bottom"
-                    outlineWidth={0.01}
+                    outlineWidth={0.015}
                     outlineColor="black"
                 >
                     {percentText}
@@ -176,6 +188,11 @@ export function CoinBar({ symbol, percentChange, cvdDivergenceScore, position }:
 
             {/* CVD Divergence Aura - Score yüksekse yanıp söner */}
             <Aura score={cvdDivergenceScore || 0} barHeight={height} />
+
+            {/* AI Signal Marker - Altın Elmas */}
+            {hasAISignal && (
+                <AiMarker position={[0, 9, 0]} />
+            )}
         </group>
     );
 }

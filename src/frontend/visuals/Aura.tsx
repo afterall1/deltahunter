@@ -1,67 +1,77 @@
 /**
- * Delta Hunter - Aura Component
- * CVD Divergence için yanıp sönen enerji aurası.
- * Score > 50: Bullish (Cyan glow)
- * Score < -50: Bearish/Trap (Red/Orange glow)
+ * Delta Hunter - Energy Pillar Aura
+ * CVD Divergence için silindirik enerji kalkanı.
+ * MeshDistortMaterial ile dalgalanan holografik efekt.
+ * Score > 50: Bullish (Cyan)
+ * Score < -50: Bearish (Neon Red)
  */
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh } from 'three';
+import { MeshDistortMaterial } from '@react-three/drei';
+import { Mesh, AdditiveBlending } from 'three';
 
 interface AuraProps {
     score: number; // -100 to +100
     barHeight: number;
 }
 
+// Enerji Sütunu sabit yüksekliği
+const PILLAR_HEIGHT = 6;
+const PILLAR_RADIUS = 0.8;
+
 export function Aura({ score, barHeight }: AuraProps) {
     const meshRef = useRef<Mesh>(null);
     const absScore = Math.abs(score);
 
-    // Renk ve visibility belirleme
+    // Visibility belirleme
     const shouldShow = absScore >= 50;
-    const isBearish = score < 0;
-    const color = isBearish ? '#ff4500' : '#00ffff';
-    const baseOpacity = 0.15 + (absScore / 100) * 0.2;
 
-    // Animasyon - HOOK'LAR HER ZAMAN ÇAĞRILMALI (koşulsuz)
+    // Renk belirleme
+    const isBearish = score < 0;
+    const color = isBearish ? '#ff0000' : '#00ffff';
+
+    // Opaklık - score'a göre
+    const opacity = 0.25 + (absScore / 100) * 0.15;
+
+    // Animasyon - HOOK'LAR HER ZAMAN ÇAĞRILMALI
     useFrame((state) => {
         if (!meshRef.current || !shouldShow) return;
 
         const time = state.clock.elapsedTime;
 
-        // Bearish için hızlı titreşim, Bullish için yavaş nefes
-        const speed = isBearish ? 4 : 2;
-        const pulse = Math.sin(time * speed) * 0.5 + 0.5;
+        // Yavaş rotasyon
+        meshRef.current.rotation.y = time * 0.3;
 
-        // Scale animasyonu (1.0 - 1.2 arası)
-        const scale = 1.0 + pulse * 0.2;
-        meshRef.current.scale.setScalar(scale);
-
-        // Opacity animasyonu
-        const material = meshRef.current.material as any;
-        if (material) {
-            material.opacity = baseOpacity + pulse * 0.15;
-        }
+        // Hafif scale pulse
+        const pulse = Math.sin(time * (isBearish ? 3 : 1.5)) * 0.03 + 1;
+        meshRef.current.scale.x = pulse;
+        meshRef.current.scale.z = pulse;
     });
 
-    // Score düşükse aura gösterme - HOOK'LARDAN SONRA RETURN
+    // Score düşükse aura gösterme
     if (!shouldShow) return null;
 
-    // Aura boyutu - bar'ı kaplayacak şekilde
-    const auraSize = Math.max(1.5, barHeight * 0.5 + 1);
+    // Silindirin Y pozisyonu - çubuğu içine alacak şekilde
+    const pillarY = PILLAR_HEIGHT / 2 + 0.2;
 
     return (
         <mesh
             ref={meshRef}
-            position={[0, barHeight / 2, 0]}
+            position={[0, pillarY, 0]}
         >
-            <sphereGeometry args={[auraSize, 16, 16]} />
-            <meshBasicMaterial
+            <cylinderGeometry args={[PILLAR_RADIUS, PILLAR_RADIUS, PILLAR_HEIGHT, 32, 1, true]} />
+            <MeshDistortMaterial
                 color={color}
                 transparent={true}
-                opacity={baseOpacity}
+                opacity={opacity}
+                roughness={0}
+                metalness={0.8}
+                blending={AdditiveBlending}
+                distort={0.4}
+                speed={isBearish ? 4 : 2}
                 depthWrite={false}
+                side={2} // DoubleSide
             />
         </mesh>
     );

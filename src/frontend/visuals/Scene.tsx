@@ -12,15 +12,15 @@ import { CoinBar } from './CoinBar';
 import { Effects } from './Effects';
 import { useCryptoStore } from '../logic/store';
 
-// Grid Layout sabitleri
+// Grid Layout sabitleri - Genişletilmiş
 const GRID_COLUMNS = 10;
-const BAR_SPACING_X = 2.0;
-const BAR_SPACING_Z = 2.2;
+const BAR_SPACING_X = 4.0;  // X ekseninde daha fazla boşluk
+const BAR_SPACING_Z = 4.0;  // Z ekseninde daha fazla boşluk
 
 function ReflectorFloor() {
     return (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-            <planeGeometry args={[80, 80]} />
+            <planeGeometry args={[160, 160]} />
             <MeshReflectorMaterial
                 blur={[300, 100]}
                 resolution={1024}
@@ -64,7 +64,7 @@ function SceneContent() {
 
         return {
             offsetX: -gridWidth / 2,
-            offsetZ: -gridDepth / 2,
+            offsetZ: -gridDepth / 3,  // Biraz öne kaydır
         };
     }, [filteredCoins.length]);
 
@@ -111,6 +111,7 @@ function SceneContent() {
                             symbol={coin.symbol}
                             percentChange={coin.percentChange}
                             cvdDivergenceScore={coin.cvdDivergenceScore}
+                            aiSignal={coin.aiSignal}
                             position={[x, 0, z]}
                         />
                     );
@@ -122,9 +123,9 @@ function SceneContent() {
                 enablePan={true}
                 enableZoom={true}
                 enableRotate={true}
-                minDistance={8}
-                maxDistance={100}
-                target={[0, 2, 0]}
+                minDistance={15}
+                maxDistance={200}
+                target={[0, 3, 0]}
                 maxPolarAngle={Math.PI / 2 - 0.05}
             />
 
@@ -138,8 +139,8 @@ export function Scene() {
     return (
         <Canvas
             camera={{
-                position: [0, 20, 35],
-                fov: 55,
+                position: [0, 45, 60],
+                fov: 45,
                 near: 0.1,
                 far: 1000,
             }}
@@ -147,7 +148,7 @@ export function Scene() {
             style={{ background: '#000000' }}
         >
             <color attach="background" args={['#000000']} />
-            <fog attach="fog" args={['#000000', 50, 150]} />
+            <fog attach="fog" args={['#000000', 80, 250]} />
             <SceneContent />
         </Canvas>
     );

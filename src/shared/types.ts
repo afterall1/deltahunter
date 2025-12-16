@@ -29,6 +29,20 @@ export interface CoinAnalysis {
     // Pozitif: Bullish Divergence (Gizli Toplama)
     cvdDivergenceScore: number;
     deltaTrend: 'UP' | 'DOWN' | 'NEUTRAL';
+    // AI Trade Signal (opsiyonel - sadece yüksek güvenilirlikte dolu)
+    aiSignal?: TradeSetup;
+}
+
+// AI Trade Setup - Uzman Sistem Çıktısı
+export interface TradeSetup {
+    symbol: string;
+    direction: 'LONG' | 'SHORT' | 'NONE';
+    confidenceScore: number; // 0-100 arası
+    reasons: string[]; // ["Likidite temizliği tespit edildi", "Balina alımı var"]
+    entryPrice: number;
+    stopLoss: number;
+    takeProfit: number;
+    riskRewardRatio: number;
 }
 
 // Backend'den Frontend'e dönen analiz sonuçları
